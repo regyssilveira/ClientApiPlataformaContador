@@ -377,19 +377,11 @@ begin
 
   CreateComponentes;
   try
-    FRestRequest.Method      := TRESTRequestMethod.rmPOST;
-    FRestRequest.Resource    := GetURLEnvio(tpeXML, ATipo);
-
-    with FRestRequest.Params.AddItem do
-    begin
-      ContentType := ctAPPLICATION_XML;
-      Kind        := pkFILE;
-      Name        := 'arquivosXml';
-      Options     := [poDoNotEncode];
-      Value       := APathXML;
-    end;
-
+    FRestRequest.Method   := TRESTRequestMethod.rmPOST;
+    FRestRequest.Resource := GetURLEnvio(tpeXML, ATipo);
+    FRestRequest.AddFile('arquivosXml', APathXML, ctAPPLICATION_XML);
     FRestRequest.Execute;
+
     Result := FRestResponse.StatusCode = 200;
     if not Result then
     begin
