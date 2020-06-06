@@ -99,6 +99,7 @@ type
     function GetURLEnvio(const ATipoEnvio: TTipoEnvio; const ATipoDocumento: TTipoDocumento): String;
     function GetJSONLogin: string;
     function GetMensagemErro(const AJsonValue: TJSONValue): string;
+    function TratarRetornoEnvio(const AResposta: TRESTResponse): Boolean;
   public
     constructor Create;
     destructor Destroy; override;
@@ -313,6 +314,18 @@ begin
   Result := Result.Trim;
 end;
 
+function TPlataformaContadorAPI.TratarRetornoEnvio(const AResposta: TRESTResponse): Boolean;
+begin
+  Result := AResposta.StatusCode = 200;
+  if not Result then
+  begin
+    if AResposta.StatusCode = 400 then
+      raise EPlataformaContadorAPI.Create(GetMensagemErro(AResposta.JSONValue))
+    else
+      raise EPlataformaContadorAPI.CreateFmt('%d - %s', [AResposta.StatusCode, AResposta.StatusText]);
+  end;
+end;
+
 function TPlataformaContadorAPI.Login: Boolean;
 begin
   CreateComponentes;
@@ -352,19 +365,12 @@ begin
 
   CreateComponentes;
   try
-    FRestRequest.Method      := TRESTRequestMethod.rmPOST;
-    FRestRequest.Resource    := GetURLEnvio(tpeString, ATipo);
+    FRestRequest.Method   := TRESTRequestMethod.rmPOST;
+    FRestRequest.Resource := GetURLEnvio(tpeString, ATipo);
     FRestRequest.AddBody(AXML, TRESTContentType.ctTEXT_PLAIN);
     FRestRequest.Execute;
 
-    Result := FRestResponse.StatusCode = 200;
-    if not Result then
-    begin
-      if FRestResponse.StatusCode = 400 then
-        raise EPlataformaContadorAPI.Create(GetMensagemErro(FRestResponse.JSONValue))
-      else
-        raise EPlataformaContadorAPI.CreateFmt('%d - %s', [FRestResponse.StatusCode, FRestResponse.StatusText]);
-    end;
+    Result := TratarRetornoEnvio(FRestResponse)
   finally
     FreeComponentes;
   end;
@@ -382,14 +388,7 @@ begin
     FRestRequest.AddFile('arquivosXml', APathXML, ctAPPLICATION_XML);
     FRestRequest.Execute;
 
-    Result := FRestResponse.StatusCode = 200;
-    if not Result then
-    begin
-      if FRestResponse.StatusCode = 400 then
-        raise EPlataformaContadorAPI.Create(GetMensagemErro(FRestResponse.JSONValue))
-      else
-        raise EPlataformaContadorAPI.CreateFmt('%d - %s', [FRestResponse.StatusCode, FRestResponse.StatusText]);
-    end;
+    Result := TratarRetornoEnvio(FRestResponse)
   finally
     FreeComponentes;
   end;
